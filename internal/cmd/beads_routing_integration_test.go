@@ -130,7 +130,7 @@ func TestBeadsRoutingFromTownRoot(t *testing.T) {
 
 			// Run bd show - it will fail since issue doesn't exist,
 			// but we're testing routing, not the issue itself
-			cmd := exec.Command("bd", "--no-daemon", "show", issueID)
+			cmd := exec.Command("bd", "show", issueID)
 			cmd.Dir = townRoot
 			cmd.Env = append(os.Environ(), "BD_DEBUG_ROUTING=1")
 			output, _ := cmd.CombinedOutput()
@@ -268,7 +268,7 @@ func TestBeadsListFromPolecatDirectory(t *testing.T) {
 
 	// Create a minimal beads.db (or use bd init)
 	// For now, just test that the redirect is followed
-	cmd := exec.Command("bd", "--no-daemon", "list")
+	cmd := exec.Command("bd", "list")
 	cmd.Dir = polecatDir
 	output, err := cmd.CombinedOutput()
 
@@ -300,7 +300,7 @@ func TestBeadsListFromCrewDirectory(t *testing.T) {
 	townRoot := setupRoutingTestTown(t)
 	crewDir := filepath.Join(townRoot, "gastown", "crew", "max")
 
-	cmd := exec.Command("bd", "--no-daemon", "list")
+	cmd := exec.Command("bd", "list")
 	cmd.Dir = crewDir
 	output, err := cmd.CombinedOutput()
 

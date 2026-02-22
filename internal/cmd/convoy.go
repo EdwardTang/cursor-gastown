@@ -261,7 +261,7 @@ func getTownBeadsDir() (string, error) {
 }
 
 func townBeadsCmd(ctx *townBeadsContext, args ...string) *exec.Cmd {
-	cmd := exec.Command("bd", append([]string{"--no-daemon"}, args...)...)
+	cmd := exec.Command("bd", args...)
 	cmd.Dir = ctx.root
 	cmd.Env = append(os.Environ(), "BEADS_DB="+ctx.dbPath)
 	return cmd
@@ -1161,9 +1161,8 @@ func getIssueDetailsBatch(issueIDs []string) map[string]*issueDetails {
 		return result
 	}
 
-	// Build args: bd --no-daemon show id1 id2 id3 ... --json
-	// Use --no-daemon to ensure fresh data (avoid stale cache from daemon)
-	args := append([]string{"--no-daemon", "show"}, issueIDs...)
+	// Build args: bd show id1 id2 id3 ... --json
+	args := append([]string{"show"}, issueIDs...)
 	args = append(args, "--json")
 
 	showCmd := exec.Command("bd", args...)
@@ -1209,8 +1208,7 @@ func getIssueDetailsBatch(issueIDs []string) map[string]*issueDetails {
 // Prefer getIssueDetailsBatch for multiple issues to avoid N+1 subprocess calls.
 func getIssueDetails(issueID string) *issueDetails {
 	// Use bd show with routing - it should find the issue in the right rig
-	// Use --no-daemon to ensure fresh data (avoid stale cache)
-	showCmd := exec.Command("bd", "--no-daemon", "show", issueID, "--json")
+	showCmd := exec.Command("bd", "show", issueID, "--json")
 	var stdout bytes.Buffer
 	showCmd.Stdout = &stdout
 

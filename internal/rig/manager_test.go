@@ -341,9 +341,6 @@ func TestInitAgentBeadsUsesRigBeadsDir(t *testing.T) {
 
 	script := `#!/usr/bin/env bash
 set -e
-if [[ "$1" == "--no-daemon" ]]; then
-  shift
-fi
 cmd="$1"
 shift
 case "$cmd" in
