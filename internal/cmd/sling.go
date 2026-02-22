@@ -389,7 +389,7 @@ func runSling(cmd *cobra.Command, args []string) error {
 		fmt.Printf("  Instantiating formula %s...\n", formulaName)
 
 		// Step 1: Cook the formula (ensures proto exists)
-		cookCmd := exec.Command("bd", "--no-daemon", "cook", formulaName)
+		cookCmd := exec.Command("bd", "cook", formulaName)
 		cookCmd.Stderr = os.Stderr
 		if err := cookCmd.Run(); err != nil {
 			return fmt.Errorf("cooking formula %s: %w", formulaName, err)
@@ -397,7 +397,7 @@ func runSling(cmd *cobra.Command, args []string) error {
 
 		// Step 2: Create wisp with feature variable from bead title
 		featureVar := fmt.Sprintf("feature=%s", info.Title)
-		wispArgs := []string{"--no-daemon", "mol", "wisp", formulaName, "--var", featureVar, "--json"}
+		wispArgs := []string{"mol", "wisp", formulaName, "--var", featureVar, "--json"}
 		wispCmd := exec.Command("bd", wispArgs...)
 		wispCmd.Stderr = os.Stderr
 		wispOut, err := wispCmd.Output()
@@ -413,8 +413,7 @@ func runSling(cmd *cobra.Command, args []string) error {
 		fmt.Printf("%s Formula wisp created: %s\n", style.Bold.Render("OK"), wispRootID)
 
 		// Step 3: Bond wisp to original bead (creates compound)
-		// Use --no-daemon for mol bond (requires direct database access)
-		bondArgs := []string{"--no-daemon", "mol", "bond", wispRootID, beadID, "--json"}
+		bondArgs := []string{"mol", "bond", wispRootID, beadID, "--json"}
 		bondCmd := exec.Command("bd", bondArgs...)
 		bondCmd.Stderr = os.Stderr
 		bondOut, err := bondCmd.Output()
@@ -442,7 +441,7 @@ func runSling(cmd *cobra.Command, args []string) error {
 
 	// Hook the bead using bd update.
 	// See: https://github.com/cursorworkshop/cursor-gastown/issues/148
-	hookCmd := exec.Command("bd", "--no-daemon", "update", beadID, "--status=hooked", "--assignee="+targetAgent)
+	hookCmd := exec.Command("bd", "update", beadID, "--status=hooked", "--assignee="+targetAgent)
 	hookCmd.Dir = beads.ResolveHookDir(townRoot, beadID, hookWorkDir)
 	hookCmd.Stderr = os.Stderr
 	if err := hookCmd.Run(); err != nil {
@@ -504,7 +503,7 @@ func runSling(cmd *cobra.Command, args []string) error {
 // This enables no-tmux mode where agents discover args via gt prime / bd show.
 func storeArgsInBead(beadID, args string) error {
 	// Get the bead to preserve existing description content
-	showCmd := exec.Command("bd", "--no-daemon", "show", beadID, "--json")
+	showCmd := exec.Command("bd", "show", beadID, "--json")
 	out, err := showCmd.Output()
 	if err != nil {
 		return fmt.Errorf("fetching bead: %w", err)
@@ -533,7 +532,7 @@ func storeArgsInBead(beadID, args string) error {
 	newDesc := beads.SetAttachmentFields(issue, fields)
 
 	// Update the bead
-	updateCmd := exec.Command("bd", "--no-daemon", "update", beadID, "--description="+newDesc)
+	updateCmd := exec.Command("bd", "update", beadID, "--description="+newDesc)
 	updateCmd.Stderr = os.Stderr
 	if err := updateCmd.Run(); err != nil {
 		return fmt.Errorf("updating bead description: %w", err)
@@ -714,7 +713,7 @@ func sessionToAgentID(sessionName string) string {
 // Uses bd's native prefix-based routing via routes.jsonl - do NOT set BEADS_DIR
 // as that overrides routing and breaks resolution of rig-level beads.
 func verifyBeadExists(beadID string) error {
-	cmd := exec.Command("bd", "--no-daemon", "show", beadID, "--json")
+	cmd := exec.Command("bd", "show", beadID, "--json")
 	// Run from town root so bd can find routes.jsonl for prefix-based routing.
 	// Do NOT set BEADS_DIR - that overrides routing and breaks rig bead resolution.
 	if townRoot, err := workspace.FindFromCwd(); err == nil {
@@ -743,7 +742,7 @@ type beadInfo struct {
 // getBeadInfo returns status and assignee for a bead.
 // Uses bd's native prefix-based routing via routes.jsonl.
 func getBeadInfo(beadID string) (*beadInfo, error) {
-	cmd := exec.Command("bd", "--no-daemon", "show", beadID, "--json")
+	cmd := exec.Command("bd", "show", beadID, "--json")
 	// Run from town root so bd can find routes.jsonl for prefix-based routing.
 	if townRoot, err := workspace.FindFromCwd(); err == nil {
 		cmd.Dir = townRoot
@@ -816,13 +815,13 @@ func resolveSelfTarget() (agentID string, pane string, hookRoot string, err erro
 // Formulas are TOML files (.formula.toml).
 func verifyFormulaExists(formulaName string) error {
 	// Try bd formula show (handles all formula file formats)
-	cmd := exec.Command("bd", "--no-daemon", "formula", "show", formulaName)
+	cmd := exec.Command("bd", "formula", "show", formulaName)
 	if err := cmd.Run(); err == nil {
 		return nil
 	}
 
 	// Try with mol- prefix
-	cmd = exec.Command("bd", "--no-daemon", "formula", "show", "mol-"+formulaName)
+	cmd = exec.Command("bd", "formula", "show", "mol-"+formulaName)
 	if err := cmd.Run(); err == nil {
 		return nil
 	}
@@ -946,7 +945,7 @@ func runSlingFormula(args []string) error {
 
 	// Step 1: Cook the formula (ensures proto exists)
 	fmt.Printf("  Cooking formula...\n")
-	cookArgs := []string{"--no-daemon", "cook", formulaName}
+	cookArgs := []string{"cook", formulaName}
 	cookCmd := exec.Command("bd", cookArgs...)
 	cookCmd.Stderr = os.Stderr
 	if err := cookCmd.Run(); err != nil {
@@ -955,7 +954,7 @@ func runSlingFormula(args []string) error {
 
 	// Step 2: Create wisp instance (ephemeral)
 	fmt.Printf("  Creating wisp...\n")
-	wispArgs := []string{"--no-daemon", "mol", "wisp", formulaName}
+	wispArgs := []string{"mol", "wisp", formulaName}
 	for _, v := range slingVars {
 		wispArgs = append(wispArgs, "--var", v)
 	}
@@ -978,7 +977,7 @@ func runSlingFormula(args []string) error {
 
 	// Step 3: Hook the wisp bead using bd update.
 	// See: https://github.com/cursorworkshop/cursor-gastown/issues/148
-	hookCmd := exec.Command("bd", "--no-daemon", "update", wispRootID, "--status=hooked", "--assignee="+targetAgent)
+	hookCmd := exec.Command("bd", "update", wispRootID, "--status=hooked", "--assignee="+targetAgent)
 	hookCmd.Dir = beads.ResolveHookDir(townRoot, wispRootID, "")
 	hookCmd.Stderr = os.Stderr
 	if err := hookCmd.Run(); err != nil {
@@ -1361,7 +1360,7 @@ func createAutoConvoy(beadID, beadTitle string) (string, error) {
 		"--description=" + description,
 	}
 
-	createCmd := exec.Command("bd", append([]string{"--no-daemon"}, createArgs...)...)
+	createCmd := exec.Command("bd", createArgs...)
 	createCmd.Dir = townRoot
 	createCmd.Env = append(os.Environ(), "BEADS_DIR="+townBeads)
 	createCmd.Stderr = os.Stderr
@@ -1372,7 +1371,7 @@ func createAutoConvoy(beadID, beadTitle string) (string, error) {
 
 	// Add tracking relation: convoy tracks the issue
 	trackBeadID := formatTrackBeadID(beadID)
-	depArgs := []string{"--no-daemon", "dep", "add", convoyID, trackBeadID, "--type=tracks"}
+	depArgs := []string{"dep", "add", convoyID, trackBeadID, "--type=tracks"}
 	depCmd := exec.Command("bd", depArgs...)
 	depCmd.Dir = townRoot
 	depCmd.Env = append(os.Environ(), "BEADS_DIR="+townBeads)
@@ -1472,7 +1471,7 @@ func runBatchSling(beadIDs []string, rigName string, townBeadsDir string) error 
 
 		// Hook the bead. See: https://github.com/cursorworkshop/cursor-gastown/issues/148
 		townRoot := filepath.Dir(townBeadsDir)
-		hookCmd := exec.Command("bd", "--no-daemon", "update", beadID, "--status=hooked", "--assignee="+targetAgent)
+		hookCmd := exec.Command("bd", "update", beadID, "--status=hooked", "--assignee="+targetAgent)
 		hookCmd.Dir = beads.ResolveHookDir(townRoot, beadID, hookWorkDir)
 		hookCmd.Stderr = os.Stderr
 		if err := hookCmd.Run(); err != nil {

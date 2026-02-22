@@ -146,7 +146,7 @@ func TestIntegration(t *testing.T) {
 	// This can happen when JSONL is updated (e.g., by git pull) but the SQLite database
 	// hasn't been imported yet. Running sync --import-only ensures we test against
 	// consistent data and prevents flaky test failures.
-	syncCmd := exec.Command("bd", "--no-daemon", "sync", "--import-only")
+	syncCmd := exec.Command("bd", "sync", "--import-only")
 	syncCmd.Dir = dir
 	if err := syncCmd.Run(); err != nil {
 		// If sync fails (e.g., no database exists), just log and continue
