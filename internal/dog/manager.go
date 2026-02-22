@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/cursorworkshop/cursor-gastown/internal/config"
+	"github.com/cursorworkshop/cursor-gastown/internal/cursor"
 	"github.com/cursorworkshop/cursor-gastown/internal/git"
 )
 
@@ -93,6 +94,12 @@ func (m *Manager) Add(name string) (*Dog, error) {
 			return nil, fmt.Errorf("creating worktree for rig %s: %w", rigName, err)
 		}
 		worktrees[rigName] = worktreePath
+	}
+
+	// Ensure Cursor settings exist at kennel level (deacon/dogs/.cursor/).
+	// All dogs share the same settings via directory traversal.
+	if err := cursor.EnsureSettingsForRole(m.kennelPath, "dog"); err != nil {
+		fmt.Printf("Warning: could not set up Cursor settings: %v\n", err)
 	}
 
 	// Create initial state file

@@ -171,13 +171,12 @@ func (m *Manager) Add(name string, createBranch bool) (*CrewWorker, error) {
 		fmt.Printf("Warning: could not set up shared beads: %v\n", err)
 	}
 
-	// NOTE: Slash commands (.claude/commands/) are provisioned at town level by gt install.
-	// All agents inherit them via Claude's directory traversal - no per-workspace copies needed.
-
-	// NOTE: We intentionally do NOT write to CLAUDE.md here.
-	// Gas Town context is injected ephemerally via SessionStart hook (gt prime).
-	// Writing to CLAUDE.md would overwrite project instructions and leak
-	// Gas Town internals into the project repo when workers commit/push.
+	// Ensure Cursor settings exist in crew/ (not crew/<name>/) so we don't
+	// write into the source repo. Cursor walks up the tree to find settings.
+	// All crew members share the same settings file.
+	if err := cursor.EnsureSettingsForRole(crewBaseDir, "crew"); err != nil {
+		fmt.Printf("Warning: could not set up Cursor settings: %v\n", err)
+	}
 
 	// Create crew worker state
 	now := time.Now()

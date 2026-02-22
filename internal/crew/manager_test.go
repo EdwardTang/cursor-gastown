@@ -69,8 +69,12 @@ func TestManagerAddAndGet(t *testing.T) {
 		t.Error("mail directory was not created")
 	}
 
-	// NOTE: CLAUDE.md is NOT created by Add() - it's injected via SessionStart hook
-	// See manager.go line 107-110 for why we skip CLAUDE.md creation
+	// Verify shared Cursor settings were created at crew/ level (not crew/<name>/)
+	crewBaseDir := filepath.Join(rigPath, "crew")
+	cursorHooks := filepath.Join(crewBaseDir, ".cursor", "hooks.json")
+	if _, err := os.Stat(cursorHooks); os.IsNotExist(err) {
+		t.Error("shared .cursor/hooks.json was not created at crew/ level")
+	}
 
 	stateFile := filepath.Join(crewDir, "state.json")
 	if _, err := os.Stat(stateFile); os.IsNotExist(err) {
