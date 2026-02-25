@@ -946,6 +946,30 @@ func TestResolveBeadsDir(t *testing.T) {
 		}
 	})
 
+	t.Run("with tracked redirect from rig", func(t *testing.T) {
+		// Create structure like: gastown/.beads/redirect -> mayor/rig/.beads
+		workDir := filepath.Join(tmpDir, "gastown")
+		rigBeadsDir := filepath.Join(workDir, ".beads")
+		mayorBeadsDir := filepath.Join(workDir, "mayor", "rig", ".beads")
+
+		if err := os.MkdirAll(rigBeadsDir, 0755); err != nil {
+			t.Fatalf("mkdir rig beads: %v", err)
+		}
+		if err := os.MkdirAll(mayorBeadsDir, 0755); err != nil {
+			t.Fatalf("mkdir mayor/rig beads: %v", err)
+		}
+
+		redirectPath := filepath.Join(rigBeadsDir, "redirect")
+		if err := os.WriteFile(redirectPath, []byte("mayor/rig/.beads\n"), 0644); err != nil {
+			t.Fatalf("write redirect: %v", err)
+		}
+
+		got := ResolveBeadsDir(workDir)
+		if got != mayorBeadsDir {
+			t.Errorf("ResolveBeadsDir() = %q, want %q", got, mayorBeadsDir)
+		}
+	})
+
 	t.Run("no beads directory", func(t *testing.T) {
 		// Directory with no .beads at all
 		workDir := filepath.Join(tmpDir, "empty")

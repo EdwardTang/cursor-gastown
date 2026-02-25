@@ -422,6 +422,10 @@ Use crew for your own workspace. Polecats are for batch work dispatch.
 	if err := os.MkdirAll(witnessPath, 0755); err != nil {
 		return nil, fmt.Errorf("creating witness dir: %w", err)
 	}
+	// Set up beads redirect for witness (points to rig-level .beads)
+	if err := beads.SetupRedirect(m.townRoot, witnessPath); err != nil {
+		fmt.Printf("  Warning: Could not set up witness beads redirect: %v\n", err)
+	}
 
 	// Create polecats directory (empty)
 	polecatsPath := filepath.Join(rigPath, "polecats")

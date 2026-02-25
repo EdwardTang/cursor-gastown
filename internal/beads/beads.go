@@ -22,7 +22,8 @@ var (
 
 // ResolveBeadsDir returns the actual beads directory, following any redirect.
 // If workDir/.beads/redirect exists, it reads the redirect path and resolves it
-// relative to workDir (not the .beads directory). Otherwise, returns workDir/.beads.
+// relative to workDir, then falls back to resolving relative to workDir's parent
+// when needed. Otherwise, it returns workDir/.beads.
 //
 // This is essential for crew workers and polecats that use shared beads via redirect.
 // The redirect file contains a relative path like "../../mayor/rig/.beads".
@@ -51,14 +52,7 @@ func ResolveBeadsDir(workDir string) string {
 		return beadsDir
 	}
 
-	// Resolve relative to workDir (the redirect is written from the perspective
-	// of being inside workDir, not inside workDir/.beads)
-	// e.g., redirect contains "../../mayor/rig/.beads"
-	// from crew/max/, this resolves to mayor/rig/.beads
-	resolved := filepath.Join(workDir, redirectTarget)
-
-	// Clean the path to resolve .. components
-	resolved = filepath.Clean(resolved)
+	resolved := resolveRedirectTarget(workDir, redirectTarget)
 
 	// Detect circular redirects: if resolved path equals original beads dir,
 	// this is an errant redirect file (e.g., redirect in mayor/rig/.beads pointing to itself)
@@ -96,9 +90,8 @@ func resolveBeadsDirWithDepth(beadsDir string, maxDepth int) string {
 		return beadsDir
 	}
 
-	// Resolve relative to parent of beadsDir (the workDir)
 	workDir := filepath.Dir(beadsDir)
-	resolved := filepath.Clean(filepath.Join(workDir, redirectTarget))
+	resolved := resolveRedirectTarget(workDir, redirectTarget)
 
 	// Detect circular redirect
 	if resolved == beadsDir {
@@ -108,6 +101,30 @@ func resolveBeadsDirWithDepth(beadsDir string, maxDepth int) string {
 
 	// Recursively follow
 	return resolveBeadsDirWithDepth(resolved, maxDepth-1)
+}
+
+// resolveRedirectTarget resolves a .beads/redirect target.
+//
+// We first resolve relative to workDir to preserve existing behavior.
+// If that target does not exist, we then try resolving it relative to the
+// parent directory as a fallback for rig-level redirects that use paths like
+// "mayor/rig/.beads".
+func resolveRedirectTarget(workDir, redirectTarget string) string {
+	resolved := filepath.Clean(filepath.Join(workDir, redirectTarget))
+	if filepath.IsAbs(redirectTarget) {
+		return resolved
+	}
+
+	if _, err := os.Stat(resolved); err == nil {
+		return resolved
+	}
+
+	parentResolved := filepath.Clean(filepath.Join(filepath.Dir(workDir), redirectTarget))
+	if _, err := os.Stat(parentResolved); err == nil {
+		return parentResolved
+	}
+
+	return resolved
 }
 
 // cleanBeadsRuntimeFiles removes gitignored runtime files from a .beads directory
